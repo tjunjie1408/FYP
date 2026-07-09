@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: fake-dcgm-exporter
+spec:
+  selector:
+    app: fake-dcgm-exporter
+  ports:
+    - name: metrics
+      port: 9400
+      targetPort: metrics

@@ -1,0 +1,45 @@
+{
+  "title": "Training Jobs",
+  "uid": "fyp-training-jobs",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-3h", "to": "now" },
+  "templating": {
+    "list": [
+      { "name": "DS_PROMETHEUS", "label": "Prometheus", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "timeseries", "title": "Argo workflows by status",
+      "description": "argo_workflows_count is exposed by the workflow-controller metrics endpoint (ServiceMonitor required).",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "sum by (status) (argo_workflows_count)", "legendFormat": "{{status}}", "refId": "A" }]
+    },
+    {
+      "id": 2, "type": "timeseries", "title": "Training pods running (simulated-GPU pods)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "count(kube_pod_labels{label_gpu_fyp_simulated=\"true\"} * on(namespace,pod) group_left kube_pod_status_phase{phase=\"Running\"} == 1) or vector(0)", "legendFormat": "running", "refId": "A" }
+      ]
+    },
+    {
+      "id": 3, "type": "timeseries", "title": "GPU utilization — training namespace",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 } },
+      "targets": [{ "expr": "DCGM_FI_DEV_GPU_UTIL{namespace=\"training\"}", "legendFormat": "gpu{{gpu}} {{pod}}", "refId": "A" }]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Workflow pod restarts (training ns)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"training\"})", "legendFormat": "restarts", "refId": "A" }
+      ]
+    }
+  ]
+}

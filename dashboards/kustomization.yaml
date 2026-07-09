@@ -1,0 +1,19 @@
+# Wraps each dashboard JSON in a ConfigMap labeled grafana_dashboard=1 so the
+# kube-prometheus-stack Grafana sidecar auto-loads it. Synced by the
+# grafana-dashboards Application (gitops/platform/grafana-dashboards.yaml).
+namespace: monitoring
+
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+
+configMapGenerator:
+  - name: fyp-dashboard-gpu-fleet
+    files: [gpu-fleet.json]
+  - name: fyp-dashboard-training-jobs
+    files: [training-jobs.json]
+  - name: fyp-dashboard-inference
+    files: [inference-kserve.json]
+  - name: fyp-dashboard-cost-reliability
+    files: [cost-reliability.json]

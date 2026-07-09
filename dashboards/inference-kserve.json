@@ -1,0 +1,59 @@
+{
+  "title": "Inference / KServe scale-to-zero",
+  "uid": "fyp-inference",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-3h", "to": "now" },
+  "templating": {
+    "list": [
+      { "name": "DS_PROMETHEUS", "label": "Prometheus", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "timeseries", "title": "Predictor replicas (models ns) — the scale-to-zero story",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "min": 0, "custom": { "fillOpacity": 20 } } },
+      "targets": [
+        { "expr": "sum by (deployment) (kube_deployment_status_replicas{namespace=\"models\"})", "legendFormat": "{{deployment}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Minutes at zero replicas (24h)",
+      "gridPos": { "h": 9, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum_over_time((sum(kube_deployment_status_replicas{namespace=\"models\"}) == bool 0)[24h:1m])", "refId": "A" }
+      ]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Current replicas",
+      "gridPos": { "h": 9, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(kube_deployment_status_replicas{namespace=\"models\"}) or vector(0)", "refId": "A" }
+      ]
+    },
+    {
+      "id": 4, "type": "timeseries", "title": "Request rate (activator + queue-proxy)",
+      "description": "Knative >=1.19 renamed metrics to OTel conventions — verify names against the deployed version (docs/runbook.md); kube-state-metrics replica counts above are the reliable fallback.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(rate(activator_request_count[5m])) or vector(0)", "legendFormat": "via activator", "refId": "A" },
+        { "expr": "sum(rate(revision_app_request_count[5m])) or vector(0)", "legendFormat": "queue-proxy", "refId": "B" }
+      ]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "p95 request latency (cold starts visible as spikes)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(activator_request_latencies_bucket[5m])))", "legendFormat": "p95", "refId": "A" }
+      ]
+    }
+  ]
+}

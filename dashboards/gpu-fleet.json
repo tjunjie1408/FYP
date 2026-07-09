@@ -1,0 +1,70 @@
+{
+  "title": "GPU Fleet Overview",
+  "uid": "fyp-gpu-fleet",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-3h", "to": "now" },
+  "templating": {
+    "list": [
+      { "name": "DS_PROMETHEUS", "label": "Prometheus", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "GPUs allocated / total",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(fyp_gpu_assigned)", "legendFormat": "allocated", "refId": "A" },
+        { "expr": "count(fyp_gpu_assigned)", "legendFormat": "total", "refId": "B" }
+      ]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Idle GPUs (now)",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "count(fyp_gpu_assigned) - sum(fyp_gpu_assigned)", "refId": "A" }
+      ]
+    },
+    {
+      "id": 3, "type": "gauge", "title": "Fleet avg utilization",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100 } },
+      "targets": [{ "expr": "avg(DCGM_FI_DEV_GPU_UTIL)", "refId": "A" }]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Total power draw",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "watt" } },
+      "targets": [{ "expr": "sum(DCGM_FI_DEV_POWER_USAGE)", "refId": "A" }]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Per-GPU utilization",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 } },
+      "targets": [{ "expr": "DCGM_FI_DEV_GPU_UTIL", "legendFormat": "gpu{{gpu}} {{pod}}", "refId": "A" }]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Framebuffer used (MiB)",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [{ "expr": "DCGM_FI_DEV_FB_USED", "legendFormat": "gpu{{gpu}}", "refId": "A" }]
+    },
+    {
+      "id": 7, "type": "table", "title": "GPU assignment",
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "DCGM_FI_DEV_GPU_UTIL", "format": "table", "instant": true, "refId": "A" }
+      ],
+      "transformations": [
+        { "id": "organize", "options": { "includeByName": { "gpu": true, "UUID": true, "namespace": true, "pod": true, "Value": true } } }
+      ]
+    }
+  ]
+}

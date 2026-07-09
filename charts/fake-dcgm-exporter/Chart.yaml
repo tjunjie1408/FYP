@@ -1,0 +1,6 @@
+apiVersion: v2
+name: fake-dcgm-exporter
+description: Simulated DCGM GPU metrics exporter (4x Tesla T4 fleet) for the FYP AI platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

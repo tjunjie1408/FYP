@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: fake-dcgm-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fake-dcgm-exporter
+  template:
+    metadata:
+      labels:
+        app: fake-dcgm-exporter
+        # CCNP allow-apiserver label (see gitops/components/network-policies)
+        fyp.io/needs-api: "true"
+    spec:
+      serviceAccountName: {{ .Release.Name }}
+      containers:
+        - name: exporter
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: 9400
+          env:
+            - name: GPU_COUNT
+              value: {{ .Values.gpuCount | quote }}
+            - name: NODE_NAME
+              value: {{ .Values.nodeName | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

@@ -1,0 +1,76 @@
+{
+  "title": "Cost & Reliability",
+  "uid": "fyp-cost-reliability",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      { "name": "DS_PROMETHEUS", "label": "Prometheus", "type": "datasource", "query": "prometheus" }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Allocated GPU-hours (24h)",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(sum_over_time(fyp_gpu_assigned[24h:1m])) / 60", "refId": "A" }
+      ]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Used GPU-hours (util-weighted, 24h)",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(sum_over_time((DCGM_FI_DEV_GPU_UTIL / 100)[24h:1m])) / 60", "refId": "A" }
+      ]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Idle GPU-hours (24h, util < 5%)",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(sum_over_time((DCGM_FI_DEV_GPU_UTIL < bool 5)[24h:1m])) / 60", "refId": "A" }
+      ]
+    },
+    {
+      "id": 4, "type": "stat", "title": "PROJECTED hourly idle cost (T4 @ $0.35/h)",
+      "description": "Projection under stated assumptions — GPUs are simulated. See reports/cost-reliability/METHODOLOGY.md.",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
+      "targets": [
+        { "expr": "(count(fyp_gpu_assigned) - sum(fyp_gpu_assigned)) * 0.35", "refId": "A" }
+      ]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Allocated vs idle GPUs over time",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "min": 0, "custom": { "fillOpacity": 25 } } },
+      "targets": [
+        { "expr": "sum(fyp_gpu_assigned)", "legendFormat": "allocated", "refId": "A" },
+        { "expr": "count(fyp_gpu_assigned) - sum(fyp_gpu_assigned)", "legendFormat": "idle", "refId": "B" }
+      ]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Container restarts — platform namespaces (reliability)",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum by (namespace) (kube_pod_container_status_restarts_total{namespace=~\"mlops-system|argo|kserve|knative-serving|minio|monitoring\"})", "legendFormat": "{{namespace}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Inference replicas vs request rate (scale-to-zero savings driver)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        { "expr": "sum(kube_deployment_status_replicas{namespace=\"models\"}) or vector(0)", "legendFormat": "replicas", "refId": "A" },
+        { "expr": "sum(rate(activator_request_count[5m])) or vector(0)", "legendFormat": "req/s", "refId": "B" }
+      ]
+    }
+  ]
+}

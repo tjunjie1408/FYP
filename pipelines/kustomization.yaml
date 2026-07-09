@@ -1,0 +1,5 @@
+# Makes pipelines/ a kustomize base so other overlays can reference it as a
+# directory (kustomize blocks plain-file references outside an overlay's root;
+# directory bases are allowed — same pattern as gitops/components/ml-operator).
+resources:
+  - training-pipeline.workflowtemplate.yaml

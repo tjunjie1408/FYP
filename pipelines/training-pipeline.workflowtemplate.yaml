@@ -1,0 +1,120 @@
+# The training pipeline contract. The operator submits Workflows that
+# reference this template by name with the 7 parameters below — keep both
+# sides in sync (operator/internal/controller/workflow_builder.go).
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: training-pipeline
+  namespace: training
+spec:
+  entrypoint: main
+  serviceAccountName: training-workflow
+  activeDeadlineSeconds: 1800
+  # Cleans up raw Workflows the operator no longer tracks (the TrainingJob's
+  # own ttlSecondsAfterFinished governs the CR and triggers cascade delete).
+  ttlStrategy:
+    secondsAfterCompletion: 86400
+  arguments:
+    parameters:
+      - name: job-name
+        value: manual
+      - name: model
+        value: mnist-cnn
+      - name: dataset
+        value: mnist
+      - name: epochs
+        value: "2"
+      - name: batch-size
+        value: "128"
+      - name: lr
+        value: "0.001"
+      - name: s3-path
+        value: models/training/manual
+  # Sequential steps share one RWO workspace (kind local-path handles it).
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi
+  templates:
+    - name: main
+      steps:
+        - - name: train
+            template: train
+        - - name: evaluate
+            template: evaluate
+        - - name: upload
+            template: upload
+
+    - name: train
+      metadata:
+        labels:
+          # The fake DCGM exporter assigns a simulated GPU to pods with this
+          # label — the train step is the "GPU" step.
+          gpu.fyp/simulated: "true"
+      # Transient-failure retries only. Job-level retry is the operator's
+      # backoffLimit — two independent layers (see docs/architecture.md).
+      retryStrategy:
+        limit: 1
+        retryPolicy: OnError
+      container:
+        image: ghcr.io/tjunjie1408/fyp-trainer:latest # local dev: fyp/trainer:dev
+        command:
+          - python
+          - /app/src/train.py
+          - --model={{workflow.parameters.model}}
+          - --dataset={{workflow.parameters.dataset}}
+          - --epochs={{workflow.parameters.epochs}}
+          - --batch-size={{workflow.parameters.batch-size}}
+          - --lr={{workflow.parameters.lr}}
+          - --out=/workspace/model.pt
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+        resources:
+          requests: { cpu: 500m, memory: 1Gi }
+          limits: { memory: 2Gi }
+
+    - name: evaluate
+      container:
+        image: ghcr.io/tjunjie1408/fyp-trainer:latest
+        command:
+          - python
+          - /app/src/evaluate.py
+          - --dataset={{workflow.parameters.dataset}}
+          - --model-path=/workspace/model.pt
+          - --metrics-out=/workspace/metrics.json
+          # Exits non-zero below threshold -> drives the operator retry demo.
+          - --threshold=0.90
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+        resources:
+          requests: { cpu: 500m, memory: 1Gi }
+          limits: { memory: 2Gi }
+
+    - name: upload
+      container:
+        image: ghcr.io/tjunjie1408/fyp-trainer:latest
+        command:
+          - python
+          - /app/src/upload.py
+          - --s3-path={{workflow.parameters.s3-path}}
+          - --files
+          - /workspace/model.pt
+          - /workspace/metrics.json
+        env:
+          - name: S3_ENDPOINT
+            value: http://minio.minio.svc.cluster.local:9000
+        envFrom:
+          - secretRef:
+              name: minio-credentials # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+        volumeMounts:
+          - name: workspace
+            mountPath: /workspace
+        resources:
+          requests: { cpu: 100m, memory: 256Mi }
+          limits: { memory: 512Mi }

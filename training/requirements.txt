@@ -1,0 +1,5 @@
+# Install torch/torchvision from the CPU index to keep the image ~1.5 GB:
+#   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.7.1
+torchvision==0.22.1
+boto3==1.38.27

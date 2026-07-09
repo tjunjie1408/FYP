@@ -1,0 +1,8 @@
+# Light kind cluster for operator development. DEFAULT CNI (kindnet) and
+# kube-proxy — no Cilium, no network policies. Single node. ~2 GB footprint.
+# This is NOT the demo cluster; it exists so `make -C operator run` has a real
+# API server + Argo Workflows + MinIO to reconcile against.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane

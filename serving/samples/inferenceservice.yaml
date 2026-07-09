@@ -1,0 +1,31 @@
+# Reference InferenceService serving the model trained by the mnist-demo
+# TrainingJob. The canonical copy synced by GitOps lives in
+# gitops/apps/inference-demo/; this one is for manual `kubectl apply` in M5.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: mnist-demo
+  namespace: models
+  annotations:
+    # Scale-to-zero: short idle window so the demo shows 1 -> 0 quickly.
+    autoscaling.knative.dev/min-scale: "0"
+    autoscaling.knative.dev/window: "60s"
+spec:
+  predictor:
+    # Simulated-GPU label: fake DCGM assigns/releases a GPU with pod lifecycle,
+    # wiring scale-to-zero into the fyp_gpu_assigned cost metric.
+    labels:
+      gpu.fyp/simulated: "true"
+    # SA annotated with the MinIO S3 secret (see gitops/apps/inference-demo).
+    serviceAccountName: kserve-s3-sa
+    containers:
+      - name: kserve-container
+        image: ghcr.io/tjunjie1408/fyp-mnist-server:latest # local dev: fyp/mnist-server:dev
+        env:
+          - name: STORAGE_URI
+            value: s3://models/training/mnist-demo/
+          - name: MODEL_NAME
+            value: mnist-demo
+        resources:
+          requests: { cpu: 250m, memory: 512Mi }
+          limits: { memory: 1Gi }

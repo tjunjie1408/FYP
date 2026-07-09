@@ -22,3 +22,9 @@ Debugging dropped flows:
 Policies sync at wave 4 (after the platform is healthy) so a policy mistake
 never masks an install problem. Cilium evaluates deny before allow — stick to
 allow-lists + default-deny, never explicit deny rules.
+
+One subtle Cilium semantic to keep in mind: **selecting an endpoint with an
+egress policy switches it to default-deny egress**. The clusterwide
+`fyp.io/needs-api` policy therefore *restricts* labeled pods (operator,
+fake-dcgm) to apiserver-only egress — intended for them, but don't reuse the
+label on pods that need anything else.

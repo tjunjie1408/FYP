@@ -4,6 +4,14 @@
 #    hence the entity (not a pod selector).
 #  - the monitoring namespace may scrape any pod (metrics ports), so
 #    workload-namespace policies don't each need a scrape clause.
+#
+# CILIUM SEMANTIC WARNING: once an egress policy selects an endpoint, that
+# endpoint switches to default-deny egress — so the needs-api label RESTRICTS
+# a pod to apiserver-only egress, even in otherwise-exempt platform
+# namespaces. That is exactly right for the operator and fake-dcgm (in-cluster
+# config uses the apiserver IP; no DNS or other egress needed). Do NOT add
+# this label to a pod that needs any other egress without also adding rules
+# for it here.
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:

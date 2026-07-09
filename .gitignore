@@ -1,0 +1,30 @@
+# Go
+operator/bin/
+operator/cover.out
+operator/dist/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+.terraform.lock.hcl
+terraform/envs/*/kubeconfig*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Data / artifacts
+training/data/
+*.pt
+reports/cost-reliability/output/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+.DS_Store

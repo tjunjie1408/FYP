@@ -1,0 +1,7 @@
+resources:
+  - training-default-deny.yaml
+  - training-allow-dns.yaml
+  - training-allow-minio.yaml
+  - minio-restrict-ingress.yaml
+  - models-allow-knative-dataplane.yaml
+  - clusterwide-apiserver-and-scrape.yaml

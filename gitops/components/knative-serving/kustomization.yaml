@@ -1,0 +1,57 @@
+# Knative Serving + Kourier from pinned upstream release URLs (kustomize
+# fetches remote resources; Argo CD's repo-server does this server-side).
+# VERSION PAIRING: keep in lockstep with what KServe 0.18's quickstart
+# installs — re-verify before bumping (docs/runbook.md, risk #2).
+resources:
+  - https://github.com/knative/serving/releases/download/knative-v1.20.0/serving-crds.yaml
+  - https://github.com/knative/serving/releases/download/knative-v1.20.0/serving-core.yaml
+  - https://github.com/knative-extensions/net-kourier/releases/download/knative-v1.20.0/kourier.yaml
+
+patches:
+  # Route traffic through Kourier (no Istio: RAM).
+  - patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: config-network
+        namespace: knative-serving
+      data:
+        ingress-class: kourier.ingress.networking.knative.dev
+  # Magic DNS off; fixed demo domain used in Host headers.
+  - patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: config-domain
+        namespace: knative-serving
+      data:
+        example.com: ""
+  - patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: config-autoscaler
+        namespace: knative-serving
+      data:
+        enable-scale-to-zero: "true"
+  # Pin Kourier to the NodePorts that kind's extraPortMappings expose
+  # (host 8080 -> 31080, host 8443 -> 31443).
+  - patch: |-
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: kourier
+        namespace: kourier-system
+      spec:
+        type: NodePort
+        ports:
+          - name: http2
+            port: 80
+            protocol: TCP
+            targetPort: 8080
+            nodePort: 31080
+          - name: https
+            port: 443
+            protocol: TCP
+            targetPort: 8443
+            nodePort: 31443

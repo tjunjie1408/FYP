@@ -1,0 +1,6 @@
+# Demo workloads (sync wave 6). The WorkflowTemplate, RBAC, and GPUQuota sync
+# automatically; the TrainingJob and InferenceService are commented out of
+# their child kustomizations so the demo applies them by hand (scripts/demo.sh).
+resources:
+  - training-demo
+  - inference-demo

@@ -1,0 +1,13 @@
+# Default-deny both directions for every pod in `training`.
+# enableDefaultDeny is the explicit (Cilium >=1.15) mechanism — clearer than
+# the empty-rules idiom. Allows come from the other training-* policies.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: training-default-deny
+  namespace: training
+spec:
+  endpointSelector: {}
+  enableDefaultDeny:
+    ingress: true
+    egress: true

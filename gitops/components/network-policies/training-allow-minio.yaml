@@ -1,0 +1,53 @@
+# Training pods may reach MinIO:9000, the apiserver (Argo executor), and —
+# as a narrowly-scoped, documented exception — the public internet on 443
+# from the train step only (torchvision dataset download). Everything else
+# is denied: a non-train pod in `training` cannot curl the internet.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: training-allow-minio
+  namespace: training
+spec:
+  endpointSelector: {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: minio
+            app: minio
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+---
+# Argo workflow pods (executor sidecar) must patch workflowtaskresults on the
+# apiserver; the wait container also reads pod state.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: training-allow-apiserver
+  namespace: training
+spec:
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - kube-apiserver
+---
+# EXCEPTION (documented trade-off): the train step downloads MNIST from the
+# public internet. Scoped to pods labeled by the WorkflowTemplate's train
+# step only; remove if you pre-bake datasets into the trainer image.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: training-allow-dataset-download
+  namespace: training
+spec:
+  endpointSelector:
+    matchLabels:
+      gpu.fyp/simulated: "true" # only the train step carries this label
+  egress:
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

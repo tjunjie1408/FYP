@@ -1,0 +1,7 @@
+namespace: models
+
+resources:
+  - serviceaccount.yaml
+  - s3-secret.yaml
+  # Applied by the demo after the model artifact exists in MinIO:
+  # - inferenceservice.yaml

@@ -1,0 +1,10 @@
+namespace: training
+
+resources:
+  # The pipeline contract, owned by pipelines/ (a kustomize base directory).
+  - ../../../pipelines
+  - serviceaccount.yaml
+  - rbac.yaml
+  - gpuquota.yaml
+  # Applied by the demo, not synced (so re-running the demo is idempotent):
+  # - trainingjob-sample.yaml

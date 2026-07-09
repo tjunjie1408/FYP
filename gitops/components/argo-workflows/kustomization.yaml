@@ -1,0 +1,6 @@
+# Argo Workflows v3.7.x pinned upstream cluster install (3.7 is the mature
+# line; v4.0 shipped Feb 2026 — too young for a demo-critical path).
+namespace: argo
+
+resources:
+  - https://github.com/argoproj/argo-workflows/releases/download/v3.7.14/install.yaml

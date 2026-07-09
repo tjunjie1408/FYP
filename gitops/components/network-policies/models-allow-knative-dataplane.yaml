@@ -1,0 +1,65 @@
+# The `models` namespace hosts KServe predictors. Two classic Knative
+# gotchas are encoded here (see README.md):
+#  1. Scale-from-zero traffic arrives via the ACTIVATOR (knative-serving ns),
+#     never the original client — it must be allowed in.
+#  2. queue-proxy pushes metrics OUT to the autoscaler — egress to
+#     knative-serving must stay open or autoscaling breaks.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: models-default-deny
+  namespace: models
+spec:
+  endpointSelector: {}
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: models-allow-knative-dataplane
+  namespace: models
+spec:
+  endpointSelector: {}
+  ingress:
+    # Knative dataplane: activator (cold start) + autoscaler metrics probes.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: knative-serving
+    # Kourier gateway (steady-state path once scaled up).
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kourier-system
+    # Prometheus scraping queue-proxy/user-container metrics.
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+  egress:
+    # DNS (with visibility).
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+          rules:
+            dns:
+              - matchPattern: "*"
+    # storage-initializer pulls model.pt from MinIO.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: minio
+            app: minio
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    # queue-proxy -> autoscaler metrics push (gotcha #2).
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: knative-serving

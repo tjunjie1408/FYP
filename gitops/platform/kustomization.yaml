@@ -1,0 +1,23 @@
+# The platform, one Application per component, ordered by sync waves:
+#  -1 namespaces + AppProject
+#   0 cert-manager
+#   1 kube-prometheus-stack (early: later apps ship ServiceMonitors)
+#   2 MinIO | Knative Serving + Kourier
+#   3 KServe | Argo Workflows
+#   4 fake-dcgm | grafana-dashboards | CiliumNetworkPolicies (after platform is healthy)
+#   5 ml-operator
+#   6 demo apps
+resources:
+  - project.yaml
+  - namespaces.yaml
+  - cert-manager.yaml
+  - kube-prometheus-stack.yaml
+  - minio.yaml
+  - knative-serving.yaml
+  - kserve.yaml
+  - argo-workflows.yaml
+  - fake-dcgm-exporter.yaml
+  - grafana-dashboards.yaml
+  - network-policies.yaml
+  - ml-operator.yaml
+  - demo-apps.yaml

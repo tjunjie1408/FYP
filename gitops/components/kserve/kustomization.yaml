@@ -1,0 +1,22 @@
+# KServe from the pinned upstream release manifest (CRDs + controller).
+# Default deployment mode in 0.18 is Knative (the mode formerly called
+# Serverless) — exactly what we want; Kourier is set via the ingress patch.
+# ClusterServingRuntimes (kserve-cluster-resources.yaml) are NOT installed:
+# the demo uses a custom predictor container, not a packaged runtime.
+resources:
+  - https://github.com/kserve/kserve/releases/download/v0.18.0/kserve.yaml
+
+patches:
+  - patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: inferenceservice-config
+        namespace: kserve
+      data:
+        ingress: |-
+          {
+            "ingressClassName": "kourier",
+            "ingressDomain": "example.com",
+            "disableIstioVirtualHost": true
+          }

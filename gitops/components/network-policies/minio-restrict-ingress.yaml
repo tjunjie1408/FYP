@@ -1,0 +1,33 @@
+# MinIO accepts traffic only from the namespaces that need it.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: minio-restrict-ingress
+  namespace: minio
+spec:
+  endpointSelector:
+    matchLabels:
+      app: minio
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: training # trainer upload step
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: models # KServe storage-initializer
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mlops-system # operator pre-flight (future)
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: minio # bucket-init job
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring # metrics scrape + console demo
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+            - port: "9001"
+              protocol: TCP

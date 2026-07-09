@@ -1,0 +1,30 @@
+# Clusterwide helpers so individual policies stay small:
+#  - pods labeled fyp.io/needs-api=true may reach the kube-apiserver
+#    (operator, fake-dcgm watcher). On kind the apiserver is host-network,
+#    hence the entity (not a pod selector).
+#  - the monitoring namespace may scrape any pod (metrics ports), so
+#    workload-namespace policies don't each need a scrape clause.
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: allow-apiserver-for-labeled-pods
+spec:
+  endpointSelector:
+    matchLabels:
+      fyp.io/needs-api: "true"
+  egress:
+    - toEntities:
+        - kube-apiserver
+---
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: allow-monitoring-scrape
+spec:
+  endpointSelector:
+    matchLabels:
+      k8s:io.kubernetes.pod.namespace: training
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring

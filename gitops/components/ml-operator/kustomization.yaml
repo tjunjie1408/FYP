@@ -1,0 +1,12 @@
+# Deploys the Kubebuilder operator from this same repo: Argo CD builds
+# kustomize overlays that reference sibling paths within one repo checkout.
+namespace: mlops-system
+
+resources:
+  - ../../../operator/config/default
+
+images:
+  # CI (.github/workflows/images.yaml) pushes this tag; bump = one-line commit.
+  - name: controller
+    newName: ghcr.io/tjunjie1408/fyp-ml-operator
+    newTag: latest

@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ml-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # needs Argo Workflows CRDs (wave 3)
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/tjunjie1408/FYP
+    targetRevision: HEAD
+    # Kustomize overlay referencing operator/config/default in this same repo
+    # and patching the image to the CI-pushed tag.
+    path: gitops/components/ml-operator
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops-system
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [ServerSideApply=true]
+    retry:
+      limit: 10
+      backoff: { duration: 15s, factor: 2, maxDuration: 5m }

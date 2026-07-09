@@ -1,0 +1,29 @@
+# Reference copy of the app-of-apps root. Terraform applies its own templated
+# copy (terraform/modules/bootstrap/root-app.yaml.tpl); keep this for manual
+# bootstrap: kubectl apply -f gitops/bootstrap/root-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/tjunjie1408/FYP
+    targetRevision: HEAD
+    path: gitops/platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m

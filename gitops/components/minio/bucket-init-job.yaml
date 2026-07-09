@@ -1,0 +1,32 @@
+# Creates the `models` bucket after MinIO syncs (Argo CD PostSync hook).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-bucket-init
+  namespace: minio
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: mc
+          # mc releases froze alongside the server image — verify this tag
+          # still pulls before first bootstrap (ADR-0006).
+          image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
+          command:
+            - /bin/sh
+            - -c
+            - |
+              mc alias set m http://minio.minio.svc.cluster.local:9000 "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" &&
+              mc mb --ignore-existing m/models &&
+              mc ls m
+          envFrom:
+            - secretRef:
+                name: minio-credentials
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { memory: 64Mi }

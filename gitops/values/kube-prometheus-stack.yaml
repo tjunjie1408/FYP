@@ -1,0 +1,45 @@
+# Laptop-trimmed kube-prometheus-stack. This file is the main RAM lever —
+# see the degradation ladder in docs/demo-script.md before touching the demo.
+alertmanager:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    replicas: 1
+    retention: 24h
+    resources:
+      requests: { cpu: 100m, memory: 400Mi }
+      limits: { memory: 1Gi }
+    # Pick up ALL ServiceMonitors/PodMonitors, not just helm-labeled ones
+    # (fake-dcgm, argo, operator ship their own).
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+
+grafana:
+  adminPassword: admin # demo cluster only
+  persistence:
+    enabled: false
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL # loads dashboards/ ConfigMaps
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 256Mi }
+
+kubeStateMetrics:
+  enabled: true # replica/pod dashboards + cost report fallback
+
+nodeExporter:
+  enabled: true
+
+kube-state-metrics:
+  metricLabelsAllowlist:
+    # exposes kube_pod_labels{label_gpu_fyp_simulated=...} for dashboards
+    - pods=[gpu.fyp/simulated]
+
+defaultRules:
+  rules:
+    alertmanager: false
+    etcd: false
+    kubeProxy: false # kube-proxy-less cluster (Cilium kubeProxyReplacement)

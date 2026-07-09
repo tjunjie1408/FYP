@@ -1,0 +1,9 @@
+# 2 simulated GPUs in `training`. The demo submits two 1-GPU jobs plus a third
+# to show the second/third visibly Queued -> Running as capacity frees.
+apiVersion: mlplatform.fyp.io/v1alpha1
+kind: GPUQuota
+metadata:
+  name: default
+  namespace: training
+spec:
+  hardGPUs: 2

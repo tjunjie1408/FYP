@@ -1,0 +1,58 @@
+# Workload namespaces carry fyp.io/workload=true: they get default-deny
+# CiliumNetworkPolicies. Platform namespaces are deliberately exempt
+# (webhooks + Knative dataplane; see gitops/components/network-policies).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio
+  labels:
+    fyp.io/workload: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: knative-serving
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kourier-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kserve
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argo
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mlops-system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: training
+  labels:
+    fyp.io/workload: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: models
+  labels:
+    fyp.io/workload: "true"

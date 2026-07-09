@@ -1,0 +1,21 @@
+# Applied by scripts/demo.sh, not synced by Argo CD.
+apiVersion: mlplatform.fyp.io/v1alpha1
+kind: TrainingJob
+metadata:
+  name: mnist-demo
+  namespace: training
+spec:
+  model:
+    name: mnist-cnn
+  dataset:
+    name: mnist
+  hyperparameters:
+    epochs: "2"
+    batchSize: "128"
+    learningRate: "0.001"
+  gpus: 1
+  retry:
+    backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  output:
+    bucket: models

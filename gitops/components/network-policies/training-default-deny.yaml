@@ -11,3 +11,8 @@ spec:
   enableDefaultDeny:
     ingress: true
     egress: true
+  # Empty rule sections (no allows) — semantically redundant next to
+  # enableDefaultDeny, but kept so schema validators built from pre-1.15
+  # Cilium CRDs (kubeconform/datreeio catalog) accept the manifest.
+  ingress: []
+  egress: []

@@ -1,0 +1,8 @@
+apiVersion: mlplatform.fyp.io/v1alpha1
+kind: GPUQuota
+metadata:
+  # Singleton by convention: the reconciler reads "default" in each namespace.
+  name: default
+  namespace: training
+spec:
+  hardGPUs: 2

@@ -1,0 +1,10 @@
+# Deployable operator bundle: CRDs + RBAC + manager.
+# GitOps consumes this via gitops/components/ml-operator (which also patches
+# the image to the CI-pushed ghcr.io tag).
+namespace: mlops-system
+namePrefix: mlplatform-
+
+resources:
+  - ../crd
+  - ../rbac
+  - ../manager

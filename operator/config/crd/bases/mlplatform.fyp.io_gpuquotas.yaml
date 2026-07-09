@@ -1,0 +1,80 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.18.0
+  name: gpuquotas.mlplatform.fyp.io
+spec:
+  group: mlplatform.fyp.io
+  names:
+    kind: GPUQuota
+    listKind: GPUQuotaList
+    plural: gpuquotas
+    singular: gpuquota
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.hardGPUs
+      name: Hard
+      type: integer
+    - jsonPath: .status.usedGPUs
+      name: Used
+      type: integer
+    - jsonPath: .status.queuedJobs
+      name: Queued
+      type: integer
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          GPUQuota caps concurrent GPU usage by TrainingJobs in a namespace.
+          Singleton by convention: the reconciler reads the GPUQuota named "default"
+          in the TrainingJob's namespace; if absent, usage is unlimited.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: GPUQuotaSpec defines the desired state of a GPUQuota.
+            properties:
+              hardGPUs:
+                description: |-
+                  HardGPUs is the maximum number of (simulated) GPUs that TrainingJobs in
+                  this namespace may hold concurrently.
+                format: int32
+                minimum: 0
+                type: integer
+            required:
+            - hardGPUs
+            type: object
+          status:
+            description: GPUQuotaStatus is written by the TrainingJob reconciler for
+              kubectl visibility.
+            properties:
+              queuedJobs:
+                format: int32
+                type: integer
+              usedGPUs:
+                format: int32
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

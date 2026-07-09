@@ -1,0 +1,59 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - argoproj.io
+  resources:
+  - workflows
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - watch
+- apiGroups:
+  - mlplatform.fyp.io
+  resources:
+  - gpuquotas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - mlplatform.fyp.io
+  resources:
+  - gpuquotas/status
+  - trainingjobs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - mlplatform.fyp.io
+  resources:
+  - trainingjobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mlplatform.fyp.io
+  resources:
+  - trainingjobs/finalizers
+  verbs:
+  - update

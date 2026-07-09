@@ -1,0 +1,38 @@
+name: manifests
+on:
+  push:
+    paths: ["gitops/**", "charts/**", "dashboards/**", "operator/config/**", ".github/workflows/manifests.yaml"]
+  pull_request:
+    paths: ["gitops/**", "charts/**", "dashboards/**", "operator/config/**"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install tools
+        run: |
+          curl -sSLo /usr/local/bin/kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
+          tar -xzf /usr/local/bin/kubeconform.tar.gz -C /usr/local/bin
+          curl -sSL https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz | tar -xz -C /usr/local/bin
+          curl -sSL https://get.helm.sh/helm-v3.16.0-linux-amd64.tar.gz | tar -xz -C /tmp && sudo mv /tmp/linux-amd64/helm /usr/local/bin/
+
+      - name: kustomize build + kubeconform
+        # CRD schemas (Application, CiliumNetworkPolicy, ServiceMonitor, KServe,
+        # Argo) come from the datreeio CRD catalog. Remote upstream resources
+        # (knative/kserve/argo URLs) are skipped here — validated upstream.
+        run: |
+          SCHEMA="-schema-location default -schema-location https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
+          for dir in gitops/platform gitops/components/namespaces gitops/components/minio \
+                     gitops/components/network-policies gitops/apps/training-demo \
+                     gitops/apps/inference-demo dashboards; do
+            echo "== kustomize build $dir =="
+            kustomize build "$dir" | kubeconform -ignore-missing-schemas -strict $SCHEMA
+          done
+
+      - name: helm template fake-dcgm-exporter
+        run: |
+          helm template charts/fake-dcgm-exporter \
+            | kubeconform -ignore-missing-schemas -strict \
+                -schema-location default \
+                -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'

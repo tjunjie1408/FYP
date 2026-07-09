@@ -1,0 +1,23 @@
+name: terraform
+on:
+  push:
+    paths: ["terraform/**", ".github/workflows/terraform.yaml"]
+  pull_request:
+    paths: ["terraform/**"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: fmt
+        run: terraform fmt -check -recursive terraform
+      - name: validate local
+        run: |
+          terraform -chdir=terraform/envs/local init -backend=false
+          terraform -chdir=terraform/envs/local validate
+      - name: validate gke
+        run: |
+          terraform -chdir=terraform/envs/gke init -backend=false
+          terraform -chdir=terraform/envs/gke validate
